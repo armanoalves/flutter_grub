@@ -13,6 +13,8 @@ class UserForm extends StatefulWidget {
 class _UserFormState extends State<UserForm> {
   final _form = GlobalKey<FormState>();
 
+  late bool _isloading = false;
+
   final Map<String, String> _formData = {};
 
   void _loadFormData(User? user) {
@@ -39,12 +41,14 @@ class _UserFormState extends State<UserForm> {
         title: const Text('Formulario de usuário'),
         actions: [
           IconButton(
-            onPressed: () {
+            onPressed: () async {
               final isValid = _form.currentState!.validate();
 
               if (isValid) {
                 _form.currentState!.save();
-                Provider.of<UsersProvider>(context, listen: false).put(
+
+                setState(() => _isloading = true);
+                await Provider.of<UsersProvider>(context, listen: false).put(
                   User(
                     id: _formData['id'],
                     name: _formData['name']!,
@@ -59,40 +63,44 @@ class _UserFormState extends State<UserForm> {
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(10),
-        child: Form(
-          key: _form,
-          child: Column(
-            children: [
-              TextFormField(
-                initialValue: _formData['name'],
-                decoration: InputDecoration(labelText: 'Nome'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Nome Inválido!';
-                  }
+      body: _isloading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Padding(
+              padding: EdgeInsets.all(10),
+              child: Form(
+                key: _form,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      initialValue: _formData['name'],
+                      decoration: InputDecoration(labelText: 'Nome'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Nome Inválido!';
+                        }
 
-                  if (value.trim().length < 3) {
-                    return 'Nome muito pequeno. No minimo 3 letras!';
-                  }
-                },
-                onSaved: (value) => _formData['name'] = value!,
+                        if (value.trim().length < 3) {
+                          return 'Nome muito pequeno. No minimo 3 letras!';
+                        }
+                      },
+                      onSaved: (value) => _formData['name'] = value!,
+                    ),
+                    TextFormField(
+                      initialValue: _formData['email'],
+                      decoration: InputDecoration(labelText: 'E-mail'),
+                      onSaved: (value) => _formData['email'] = value!,
+                    ),
+                    TextFormField(
+                      initialValue: _formData['avatarUrl'],
+                      decoration: InputDecoration(labelText: 'URL Avatar'),
+                      onSaved: (value) => _formData['avatarUrl'] = value!,
+                    ),
+                  ],
+                ),
               ),
-              TextFormField(
-                initialValue: _formData['email'],
-                decoration: InputDecoration(labelText: 'E-mail'),
-                onSaved: (value) => _formData['email'] = value!,
-              ),
-              TextFormField(
-                initialValue: _formData['avatarUrl'],
-                decoration: InputDecoration(labelText: 'URL Avatar'),
-                onSaved: (value) => _formData['avatarUrl'] = value!,
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
